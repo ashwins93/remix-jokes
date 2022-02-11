@@ -1,0 +1,10 @@
+{
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "driver": "SQLite",
+      "name": "jokes",
+      "database": "${workspaceFolder:remix-jokes}/prisma/dev.db"
+    }
+  ]
+}
