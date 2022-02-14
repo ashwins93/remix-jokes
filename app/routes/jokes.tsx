@@ -1,15 +1,18 @@
-import { Link, Outlet, useLoaderData } from 'remix'
+import { Form, Link, Outlet, useLoaderData } from 'remix'
 import type { LinksFunction, LoaderFunction } from 'remix'
-import type { Joke } from '@prisma/client'
+import type { User } from '@prisma/client'
 import stylesUrl from '../styles/jokes.css'
 import { db } from '~/utils/db.server'
+import { getUser } from '~/utils/session.server'
 
 type LoaderData = {
-  jokes: Array<Joke>
+  jokes: Array<{ id: string; name: string }>
+  user: User | null
 }
 
-export const loader: LoaderFunction = async () => {
-  return {
+export const loader: LoaderFunction = async ({ request }) => {
+  const user = await getUser(request)
+  const data: LoaderData = {
     jokes: await db.joke.findMany({
       select: {
         id: true,
@@ -20,7 +23,10 @@ export const loader: LoaderFunction = async () => {
         createdAt: 'desc',
       },
     }),
-  } as LoaderData
+    user,
+  }
+
+  return data
 }
 
 export const links: LinksFunction = () => {
@@ -40,6 +46,18 @@ export default function JokesRoute() {
               <span className="logo-medium">J🤪KES</span>
             </Link>
           </h1>
+          {data.user ? (
+            <div className="user-info">
+              <span>Hi {data.user.username}</span>
+              <Form method="post" action="/logout">
+                <button type="submit" className="button">
+                  Logout
+                </button>
+              </Form>
+            </div>
+          ) : (
+            <Link to="/login">Login</Link>
+          )}
         </div>
       </header>
 
@@ -51,7 +69,9 @@ export default function JokesRoute() {
             <ul>
               {data.jokes.map(joke => (
                 <li key={joke.id}>
-                  <Link to={joke.id}>{joke.name}</Link>
+                  <Link prefetch="intent" to={joke.id}>
+                    {joke.name}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -67,3 +87,5 @@ export default function JokesRoute() {
     </div>
   )
 }
+
+export function CatchBoundary() {}
